@@ -1,6 +1,8 @@
 package org.therightstuff;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -9,9 +11,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class Main {
 
@@ -36,7 +38,19 @@ public class Main {
                 }
             }
 
-            String tmp = "0";
+            List<Slide> slides = buildSlides();
+            BufferedWriter writer = new BufferedWriter(new FileWriter("results.txt"));
+            writer.append(String.valueOf(slides.size()));
+            writer.newLine();
+            for (Slide slide : slides) {
+                for (Integer imageId : slide.images) {
+                    writer.append(String.valueOf(imageId));
+                    writer.append(" ");
+                }
+                writer.newLine();
+            }
+
+            writer.close();
 
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -44,22 +58,31 @@ public class Main {
     }
 
     public static List<Slide> buildSlides() {
+        List<Slide> slides = new ArrayList<>();
         Set<Integer> usedImages = new HashSet<>();
         List<Image> images = imagesMap.values().stream().max(Comparator.comparing(List::size)).orElse(
             Collections.emptyList());
-
-        for (Image image:images) {
-
+        List<Image> imagesInSlide = new ArrayList<>();
+        for (Image image : images) {
+            if (image.orientation == Orientation.V ) {
+                imagesInSlide.add(image);
+                if (imagesInSlide.size() == 2) {
+                    slides.add(new Slide(imagesInSlide.stream().map(it -> it.id).collect(Collectors.toList())));
+                    imagesInSlide = new ArrayList<>();
+                }
+            } else if (image.orientation == Orientation.H) {
+                slides.add(new Slide(Collections.singletonList(image.id)));
+            }
         }
 
-        return new Slide
+        return slides;
     }
 
     private static class Slide {
         public List<Integer> images;
 
         public Slide(List<Integer> imageId) {
-
+            images = imageId;
         }
 
     }
